@@ -5,10 +5,12 @@ import { useState, KeyboardEvent } from 'react';
 // 
 type TodoListPropsType = {
     title: string,
+    todoListFilter: FilterValuesType,
     tasks: Array<TaskType>,
     addTask: (title: string) => void,
     removeTask: (taskID: string) => void,
-    changeTodoListFilter: (newFilterValue: FilterValuesType) => void;
+    changeTodoListFilter: (newFilterValue: FilterValuesType) => void,
+    changeTaskStatus: (taskID: string,  newIsDone: boolean) => void
 }
 
 
@@ -16,28 +18,40 @@ type TodoListPropsType = {
 function TodoList(props: TodoListPropsType) {
 
     const [title, setTitle] = useState<string>("");
-
-
+    const [error, setError] = useState<string | null>(null)
     const tasks = props.tasks.map( task => {
+        const remoteTask = () => props.removeTask(task.id)
+        const changeStatus = (e: ChangeEvent<HTMLInputElement>) => props.changeTaskStatus(task.id, e.currentTarget.checked)
         return (
             <li key={task.id}>
-                <input type="checkbox" checked={task.isDone}/>
+                <input
+                    type="checkbox"
+                    checked={task.isDone}
+                    onChange={changeStatus}/>
                 <span>{task.title}</span>
                 <button
                 className="btn-remove"
-                onClick={() => props.removeTask(task.id)}>X</button>
+                onClick={remoteTask}>X</button>
             </li>
         ) 
 
     });
-
+    //() => props.removeTask(task.id)
     
     const setAllFilterValue = () => props.changeTodoListFilter("all");
     const setActiveFilterValue = () => props.changeTodoListFilter("active");
     const setCompleteFilterValue = () => props.changeTodoListFilter("complete");
-    const changeTitle = (e: ChangeEvent<HTMLInputElement>) => setTitle(e.currentTarget.value); 
+    const changeTitle = (e: ChangeEvent<HTMLInputElement>) => {
+        setError(null)
+        setTitle(e.currentTarget.value);
+    }
     const addTask = () => {
-        props.addTask("Task");
+        const trimmedTitle = title.trim()
+        if(trimmedTitle){
+            props.addTask(title);
+        } else {
+            setError("Title is required!")
+        }
         setTitle("");
     }
 
@@ -55,25 +69,30 @@ function TodoList(props: TodoListPropsType) {
                 value={title}
                 onChange={changeTitle}
                 onKeyPress={onKeyPressAddTask}
+                className={error ? "error" : ""}
                 />
                 <button onClick = {addTask}>+</button>
+                {error && <div className={"error-text"}>{error}</div>}
             </div>
             <ul>
                 {tasks}
             </ul>
             <div>
                 <button
+                    className = {props.todoListFilter === "all" ? "active-filter" : ""}
                     onClick={setAllFilterValue}
                 >All</button>
-                <button onClick={setActiveFilterValue}>Active</button>
-                <button onClick={setCompleteFilterValue}>Completed</button>
+                <button
+                    className = {props.todoListFilter === "active" ? "active-filter" : ""}
+                    onClick={setActiveFilterValue}>Active</button>
+                <button
+                    className = {props.todoListFilter === "complete" ? "active-filter" : ""}
+                    onClick={setCompleteFilterValue}>Completed</button>
             </div>
         </div>
 
     );
 }
-
-
 
 
 export default TodoList;
